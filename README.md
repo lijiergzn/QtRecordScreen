@@ -16,7 +16,7 @@
 
 
 
-## 1、封装adb命令
+# 1、封装adb命令
 
 adb命令为外部的进程，qt中使用外部进程需要使用QtProcess。
 
@@ -38,9 +38,57 @@ reverseRemove ：删除反向代理
 
 
 
+# 2 server
 
+启动命令：
 
+```
+// adb shell /data/local/tmp/scrcpy-srever.jar app_process / com.genymobile.scrcpy.Server maxsize bitrate false ""
+// adb shell /data/local/tmp/scrcpy-srever.jar app_process / com.genymobile.scrcpy.Server 1080 800000 false ""
+```
 
+启动流程：
+
+push、反向代理、启动服务；
+
+在这个过程中可能会存在启动不成功的情况，需要清理的操作；----使用状态机编程方法
+
+```
+状态机编程方法
+1、使用enum 创建枚举的状态过程
+2、创建一个状态变量，表示要执行的状态过程
+3、根据不同的状态进行实现
+
+```
+
+信号槽函数
+
+```
+connect(&m_workProcess, &AdbProcess::adbProcessResult, this, &server::onWorkProcessResult);
+```
+
+连接 `AdbProcess` 类的 `adbProcessResult` 信号到 `server` 类的 `onWorkProcessResult` 槽
+
+**信号和槽的基本机制**
+
+- **信号**：信号本质上是一个函数声明（没有实现），用于在对象之间传递事件。当信号被触发时（通过 `emit` 关键字），Qt 框架会自动调用与该信号连接的槽函数。
+- **槽函数**：槽函数是一个普通的成员函数，但可以与信号连接。槽函数可以有任何返回类型（通常是 `void`），并且可以接受与信号相同的参数。
+
+**触发机制**
+
+当你在代码中调用类似以下内容时：
+
+```
+emit adbProcessResult(result);
+```
+
+所有连接到 `adbProcessResult` 信号的槽函数都会被立即调用。例如：
+
+```
+connect(&m_workProcess, &AdbProcess::adbProcessResult, this, &server::onWorkProcessResult);
+```
+
+当 `emit adbProcessResult(result)` 被执行时，`server` 对象的 `onWorkProcessResult` 槽函数会被调用，并接收到 `result` 参数。
 
 
 
