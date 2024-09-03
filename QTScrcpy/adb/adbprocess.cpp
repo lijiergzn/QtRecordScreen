@@ -1,6 +1,8 @@
 #include "adbprocess.h"
 #include <QDebug>
 
+
+//static 静态成员变量，不能在类内进行初始化，必须要在类外进行初始化
 QString AdbProcess::s_adbPath="";
 
 AdbProcess::AdbProcess(QObject *parent )
@@ -68,25 +70,73 @@ void AdbProcess::reverseRemove(const QString &serial, const QString &deviceSocke
     execute(serial, adbArgs);
 }
 
+QStringList AdbProcess::getDevicesSerialFromStdOut()
+{
+    QStringList serials;
+    QStringList devicesInfoList = m_standardOutput.split(QRegExp("\r\n|\n"), QString::SkipEmptyParts);
+    for(QString deviceInfo : devicesInfoList){
+        QStringList deviceInfos = deviceInfo.split(QRegExp("\t"), QString::SkipEmptyParts);
+        if(2 == deviceInfos.count() && 0 == deviceInfos[1].compare("device")){
+            serials << deviceInfos[0];
+        }
+    }
+    return serials;
+}
+
+QString AdbProcess::getDeviceIPFromStdOut()
+{
+    QString ip = "";
+    QString strIPExp = "inet [\\d.]*";
+    QRegExp ipRegExp(strIPExp, Qt::CaseInsensitive);
+    if(ipRegExp.indexIn(m_standardOutput) != -1){
+        ip = ipRegExp.cap(0);
+        ip = ip.right(ip.size() -5);
+    }
+    return ip;
+}
+
+QString AdbProcess::getStdOut()
+{
+    return m_standardOutput;
+}
+
+QString AdbProcess::getRrrorOut()
+{
+    return m_errorOutput;
+}
+
 void AdbProcess::initSignals()
 {
-    connect(this,&QProcess::errorOccurred,this,[](QProcess::ProcessError error){
+    connect(this,&QProcess::errorOccurred,this,[this](QProcess::ProcessError error){
+        if(QProcess::FailedToStart == error){
+            emit adbProcessResult(AER_ERROR_MISSING_BINARY);
+        }else{
+            emit adbProcessResult(AER_ERROR_START);
+        }
         qDebug()<<error;
     });
     connect(this, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
-        this,[](int exitCode, QProcess::ExitStatus exitStatus){
+        this,[this](int exitCode, QProcess::ExitStatus exitStatus){
+        if (NormalExit == exitStatus && 0 == exitCode) {
+            emit adbProcessResult(AER_SUCCESS_EXEC);
+        } else {
+            emit adbProcessResult(AER_ERROR_EXEC);
+        }
         qDebug()<<exitCode<<exitStatus;
     });
 
     connect(this,&QProcess::readyReadStandardError,this,[this](){
-        qDebug()<<readAllStandardError();
+        m_errorOutput = QString::fromLocal8Bit(readAllStandardError()).trimmed();
+        qDebug()<<m_errorOutput;
     });
 
     connect(this,&QProcess::readyReadStandardOutput,this,[this](){
-        qDebug()<<readAllStandardOutput();
+        m_standardOutput = QString::fromLocal8Bit(readAllStandardOutput()).trimmed();
+        qDebug()<<m_standardOutput;
     });
 
-    connect(this,&QProcess::started,this,[](){
+    connect(this,&QProcess::started,this,[this](){
+        emit adbProcessResult(AER_SUCCESS_START);
         qDebug()<<"started";
     });
 

@@ -25,12 +25,15 @@ HEADERS += \
 FORMS += \
     dialog.ui
 
-# 添加子工程
+# 添加子模块
 include($$PWD/adb/adb.pri)
+include($$PWD/server/server.pri)
+
 
 # 包含目录
 INCLUDEPATH += \
-    $$PWD/adb
+    $$PWD/adb \
+    $$PWD/server
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
