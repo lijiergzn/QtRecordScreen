@@ -1,6 +1,5 @@
 //#include<QProcess>
 #include"adbprocess.h"
-
 #include "dialog.h"
 #include "ui_dialog.h"
 #include<QDebug>
@@ -10,6 +9,13 @@ Dialog::Dialog(QWidget *parent)
     , ui(new Ui::Dialog)
 {
     ui->setupUi(this);
+    connect(&m_server, &server::serverStartResult, this,[](bool success){
+        qDebug()<<"server start"<<success;
+    });
+
+    connect(&m_server, &server::connectToResult, this,[](bool success){
+        qDebug()<<"connectToResult"<<success;
+    });
 }
 
 Dialog::~Dialog()
@@ -21,12 +27,10 @@ Dialog::~Dialog()
 void Dialog::on_testBut_clicked()
 {
 
-    QStringList arguments;
-    arguments << "devices";
+    m_server.start("", 27183, 720, 8000000);
+}
 
-    AdbProcess *myProcess = new AdbProcess(this);
-    connect(myProcess, &AdbProcess::adbProcessResult, this, [](AdbProcess::ADB_EXEC_RESULT processResult){
-        qDebug() << ">>>>>>" << processResult;
-    });
-    myProcess->execute("", arguments);
+void Dialog::on_stopBut_clicked()
+{
+    m_server.stop();
 }

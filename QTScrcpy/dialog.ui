@@ -26,6 +26,19 @@
     <string>testBut</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="stopBut">
+   <property name="geometry">
+    <rect>
+     <x>498</x>
+     <y>130</y>
+     <width>111</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>stopBut</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>
